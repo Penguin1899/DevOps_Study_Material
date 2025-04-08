@@ -273,14 +273,15 @@ Cannot be ignored or caught:
 <details>
 <summary>PID Table, ps Command, and /proc</summary>
 How ps Works:
+
 ```
 Commands like ps aux or ps -ef pull information from the /proc virtual filesystem. This directory contains runtime process info for every PID (e.g., /proc/<pid>).
 ```
 
 Details like command line, memory, CPU usage come from files like:
-- /proc/<pid>/status
-- /proc/<pid>/cmdline
-- /proc/<pid>/stat
+- /proc/\<pid\>/status
+- /proc/\<pid\>/cmdline
+- /proc/\<pid\>/stat
 
 Where is the PID table stored?
 - It's maintained in kernel memory, not user-accessible directly, but exposed via /proc.
