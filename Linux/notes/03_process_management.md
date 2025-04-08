@@ -274,9 +274,8 @@ Cannot be ignored or caught:
 <summary>PID Table, ps Command, and /proc</summary>
 How ps Works:
 
-```
-Commands like ps aux or ps -ef pull information from the /proc virtual filesystem. This directory contains runtime process info for every PID (e.g., /proc/<pid>).
-```
+- Commands like `ps aux` or `ps -ef` pull information from the `/proc` virtual filesystem. This directory contains runtime process info for every PID (e.g., /proc/\<pid\>).
+
 
 Details like command line, memory, CPU usage come from files like:
 - /proc/\<pid\>/status
@@ -439,8 +438,11 @@ This runs the child in background, waits for it, and ensures cleanup.
 ---
 - **Question** "How to catch an Interrupt with trap in Bash?"
 What is a signal?
-- A signal is a notification sent to a process to notify it of an event (e.g., SIGINT when you press Ctrl+C).
-- Interrupt is a SIGINT
+```
+A signal is a notification sent to a process to notify it of an event (e.g., SIGINT when you press Ctrl+C).
+
+Interrupt is a SIGINT
+```
 
 What is trap?
 - trap allows you to catch and handle signals in a Bash script.
