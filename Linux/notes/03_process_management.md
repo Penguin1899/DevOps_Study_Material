@@ -1,3 +1,11 @@
+## Understanding Processes
+Everything running on a Linux system is a process, with a unique PID (Process ID).
+The first process is init (or systemd in all modern systems), has PID 1.
+Processes can be:
+- Foreground / Background
+- Parent / Child
+- Interactive / Daemon
+
 ## What is "Process Management" in Linux?
 In interviews, this refers to understanding, inspecting, controlling, and manipulating running processes on a Linux system.
 
@@ -22,28 +30,14 @@ Key columns in ps or top:
 - TTY – Terminal it’s attached to.
 - STAT – Process state (see below).
 
-### STAT values to know
+### STAT values to know (Process States)
 - R = Running
 - S = Sleeping (waiting for input)
 - D = Uninterruptible sleep (usually IO)
 - Z = Zombie (terminated, but parent hasn’t cleaned it up)
 - T = Stopped
 
-
-Q: Interviewers may ask:
-```
-“What is a zombie process? How do you find and deal with it?”
-```
-
-Answer:
-```
-Zombie = dead process not reaped by parent
-Use ps aux | grep Z [or] ps -el | grep Z
-Solution: kill parent, or ensure it calls wait()
-```
-
----
-### Killing or Managing Processes
+### Killing Processes
 - `kill PID` – Send signal (default is SIGTERM, 15).
 - `kill -9 PID` – Force kill (SIGKILL).
 - `pkill` – Kill by name.
@@ -51,26 +45,17 @@ Solution: kill parent, or ensure it calls wait()
 
 > Interview Tip: Know the difference between kill, kill -9, and pkill.
 
-Bonus:
+#### Bonus
 - nice / renice – Adjust process priority.
 - nohup – Run process immune to hangups (terminal close/ssh session close).
 - disown – Remove from shell job table.
 
----
 ### Foreground & Background Jobs
-- & – Run in background.
+- & – Run in background (simulates a fork() systemcall).
 - jobs – List current shell jobs.
 - fg – Bring job to foreground.
 - bg – Resume a stopped job in background.
 - Ctrl+Z – Pause a job (sends SIGSTOP).
-
-Interview Example:
-
-“How do you pause a running job and move it to background?”
-```
-Ctrl+Z       # Pause
-bg           # Resume in background
-```
 
 ---
 ### Signals
@@ -152,73 +137,6 @@ They clutter monitoring and logs
 In short:
 - One or two zombies = fine, harmless.
 - Dozens or hundreds = symptom of a deeper issue, can cause system instability.
-
-Interview Tip:
-If you're asked "How do you handle zombies?":
-
-You can say:
-- I would identify the zombie's parent process using ps -el or pstree, and check if it's stuck. If the parent isn't reaping its child, I can try restarting it. If the parent is defunct or misbehaving, I may need to kill it so init (PID 1) adopts and reaps the zombie.
-
-Interview Scenario: Zombie Troubleshooting
-Interviewer Asks:
-"You're seeing a lot of zombie processes on a Linux server. Walk me through how you would identify and resolve the issue."
-
-Step 1: Confirm Zombies Exist
-Start by listing processes with STAT = Z:
-```
-ps -el | grep Z
-```
-Or more focused:
-```
-ps aux | awk '$8 ~ /Z/ { print $0 }'
-```
-This shows you zombie processes still in the process table.
-
-Step 2: Identify the Parent Process (PPID)
-Every zombie still has a parent process ID (PPID). To find it:
-```
-ps -o ppid= -p <zombie_pid>
-```
-
-Or use pstree to visually trace the hierarchy:
-```
-pstree -p | less
-```
-
-You’ll find something like:
-```
-systemd(1)─┬─sshd(1001)───bash(1222)───defunct(1355)
-```
-Here, bash(1222) is the parent of the zombie 1355.
-
-Step 3: Inspect the Parent Process
-Now check whether the parent is stuck or still working:
-```
-ps -p <ppid> -o pid,ppid,cmd,stat
-```
-If it’s an active service (like a custom script, nginx, Java app), it should be calling wait() on its children. If not, that’s your bug.
-
-Step 4: Fix or Kill the Parent
-Option A: If parent is hung or buggy:
-```
-kill -TERM <ppid>      # Graceful shutdown
-# Or, if unresponsive
-kill -9 <ppid>          # Force kill
-```
-Once it dies, init (PID 1) will adopt the zombie and reap it.
-
-Option B: Restart the service If the zombie is from a daemon (e.g., Apache, cron job runner), restart it:
-```
-sudo systemctl restart apache2
-```
-That usually clears the zombie if the service starts fresh and reaps old children.
-
-Bonus Step: Prevent It Long-Term
-Check the code of the parent (cron job, bash script, C code) to ensure it calls wait() or handles signals like SIGCHLD.
-
-Conclusion Summary (Interview Style):
-I’d start by confirming the presence of zombies using ps or pstree. Then I’d trace the PPID to identify the parent process. If the parent is not cleaning up its children, I’d either restart or kill it, so init can reap the zombie. If this is happening often, I'd inspect the code or script for proper child process handling and add wait() logic where needed.
-
 </details>
 
 <details>
@@ -367,3 +285,186 @@ Details like command line, memory, CPU usage come from files like:
 Where is the PID table stored?
 - It's maintained in kernel memory, not user-accessible directly, but exposed via /proc.
 </details>
+
+
+---
+## Interview Examples:
+- **Question** "What is a zombie process? How do you find and deal with it?"
+Answer:
+```
+Zombie = dead process not reaped by parent
+Use ps aux | grep Z [or] ps -el | grep Z
+Solution: kill parent, or ensure it calls wait()
+```
+
+---
+- **Question** "How do you pause a running job and move it to background?"
+```
+Ctrl+Z       # Pause
+bg           # Resume in background
+```
+
+---
+- **Question** "How do you handle zombies?"
+```
+I would identify the zombie's parent process using ps -el or pstree, and check if it's stuck. If the parent isn't reaping its child, I can try restarting it. If the parent is defunct or misbehaving, I may need to kill it so init (PID 1) adopts and reaps the zombie.
+```
+
+---
+- **Question** "You're seeing a lot of zombie processes on a Linux server. Walk me through how you would identify and resolve the issue."
+```
+Step 1: Confirm Zombies Exist
+Start by listing processes with STAT = Z:
+
+ps -el | grep Z
+
+Or more focused:
+
+ps aux | awk '$8 ~ /Z/ { print $0 }'
+
+This shows you zombie processes still in the process table.
+
+Step 2: Identify the Parent Process (PPID)
+Every zombie still has a parent process ID (PPID). To find it:
+
+ps -o ppid= -p <zombie_pid>
+
+
+Or use pstree to visually trace the hierarchy:
+
+pstree -p | less
+
+You’ll find something like:
+systemd(1)─┬─sshd(1001)───bash(1222)───defunct(1355)
+
+Here, bash(1222) is the parent of the zombie 1355.
+
+Step 3: Inspect the Parent Process
+Now check whether the parent is stuck or still working:
+
+ps -p <ppid> -o pid,ppid,cmd,stat
+
+If it’s an active service (like a custom script, nginx, Java app), it should be calling wait() on its children. If not, that’s your bug.
+
+Step 4: Fix or Kill the Parent
+Option A: If parent is hung or buggy:
+
+kill -TERM <ppid>      # Graceful shutdown
+# Or, if unresponsive
+kill -9 <ppid>          # Force kill
+
+Once it dies (it becomes a orphan process), init (PID 1) will adopt the zombie and reap it.
+
+Option B: Restart the service If the zombie is from a daemon (e.g., Apache, cron job runner), restart it:
+
+sudo systemctl restart apache2
+
+That usually clears the zombie if the service starts fresh and reaps old children.
+
+Bonus Step: Prevent It Long-Term
+Check the code of the parent (cron job, bash script, C code) to ensure it calls wait() or handles signals like SIGCHLD.
+
+Conclusion Summary (Interview Style):
+I’d start by confirming the presence of zombies using ps or pstree. Then I’d trace the PPID to identify the parent process. If the parent is not cleaning up its children, I’d either restart or kill it, so init can reap the zombie. If this is happening often, I'd inspect the code or script for proper child process handling and add wait() logic where needed.
+```
+
+---
+- **Question** "A process is using 100% CPU. How do you handle it?"
+```
+top → identify PID
+renice to lower priority
+strace or lsof to investigate
+Kill if necessary
+```
+
+---
+- **Question** "What is a zombie process and how do you identify it?"
+```
+ps aux | grep Z or look for [defunct]
+
+Parent process is not reaping its children
+
+Fix: kill/restart parent process
+```
+
+---
+- **Question** "How to keep a script running even after logout?"
+```
+nohup ./deploy.sh &
+disown %1
+```
+
+---
+- **Question** "How to troubleshoot a hanging process?"
+```
+Use strace -p <PID> to see syscalls in real time
+```
+
+---
+- **Question** "What’s the difference between a zombie and an orphan process?"
+```
+A zombie is a process that has completed execution but still has an entry in the process table because its parent hasn't read its exit status via wait(). It holds onto resources like PID. An orphan is a process whose parent has died; the OS reassigns it to init or systemd, which cleans it up. Zombies are problematic if many accumulate, while orphans are usually handled gracefully.
+```
+
+---
+- **Question** "Implement fork process in bash"
+```
+In bash, you can fork a process using `&` to run it in the background (this is a way to simulate a fork).
+You can use ps to view processes, and wait to handle completion.
+
+Example script :
+#!/bin/bash
+echo "Starting parent process $$"
+( 
+  echo "Child process $$"
+  sleep 5
+) &
+child_pid=$!
+echo "Child PID: $child_pid"
+wait $child_pid
+echo "Child completed"
+```
+
+---
+- **Question** "How would you fork a child process in bash and wait for it?"
+```
+I can fork a process using the & operator in bash. After that, I can capture its PID and use wait to handle its completion. For example:
+
+( sleep 3; echo "Done" ) & pid=$!; wait $pid
+
+This runs the child in background, waits for it, and ensures cleanup.
+```
+
+---
+- **Question** "How to catch an Interrupt with trap in Bash?"
+What is a signal?
+- A signal is a notification sent to a process to notify it of an event (e.g., SIGINT when you press Ctrl+C).
+- Interrupt is a SIGINT
+
+What is trap?
+- trap allows you to catch and handle signals in a Bash script.
+- Useful for cleanup operations when a script is interrupted.
+- Can run some cleanup stuff before exiting on being interrupted.
+
+Example: Catch SIGINT (Ctrl+C)
+```
+#!/bin/bash
+cleanup() {
+    echo "Caught interrupt. Cleaning up..."
+    exit 1
+}
+
+trap cleanup SIGINT
+
+echo "Running... Press Ctrl+C to stop"
+while true; do sleep 1; done
+SIGINT = Signal 2 (Ctrl+C)
+```
+
+Other common signals: SIGTERM, SIGKILL, EXIT, ERR
+Use Case:
+- Prevent abrupt termination of a backup script or DB migration.
+- Perform cleanup (remove temp files, close sockets).
+
+> Interview Tip:
+> Demonstrate how you’ve used trap for graceful shutdowns or cleanup, especially in cron jobs or long-running scripts.

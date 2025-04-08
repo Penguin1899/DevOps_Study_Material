@@ -9,11 +9,11 @@ Root User:
 - Can do anything, including deleting system files, changing ownerships, killing any process, etc.
 
 Superuser:
-
 - A role or concept, not necessarily tied to the root user.
 - Any user who has superuser privileges (often via sudo).
 - So, when a normal user runs a command with sudo, they are temporarily acting as the superuser—even though they’re not root.
 
+> [!NOTE]
 > Every root user is a superuser, but not every superuser is the root user.
 > </br>Superuser = role; root = account.
 
@@ -64,10 +64,8 @@ Location:
 - `/etc/sudoers`
 
 Why use visudo instead of directly editing?
-- `visudo`` checks for syntax errors before saving.
-
+- `visudo` checks for syntax errors before saving.
 - A bad sudoers file can lock you out from using sudo.
-
 - `visudo` opens the file in a safe environment and warns you of issues.
 
 Sample Contents:
@@ -90,7 +88,7 @@ Each line says:
 
 <details>
 <summary>How do you give a user sudo access only for specific commands?</summary>
-Let’s say we want to let user devops restart Nginx, but nothing else—not full root access.
+</br>Let’s say we want to let user devops restart Nginx, but nothing else—not full root access.
 
 Step-by-Step Answer (Interview Style)
 1. Open the sudoers file safely using visudo:
@@ -136,7 +134,7 @@ devops ALL=(ALL) NOPASSWD: NGINX_CMDS
 
 <details>
 <summary>How do you allow a user to run only a list of specific commands using sudo?</summary>
-
+</br>
 - Option 1: List commands directly
 ```
 devuser ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart nginx, /usr/bin/systemctl status nginx, /usr/bin/journalctl -u nginx
@@ -184,7 +182,7 @@ Because that’s just giving full root access. If you mention this danger in an 
 ---
 <details>
 <summary>How do you let a user run only a specific script with sudo?</summary>
-Scenario:
+</br>Scenario:
 You have a script like this: `/opt/scripts/deploy.sh`
 
 ```
