@@ -290,6 +290,7 @@ Where is the PID table stored?
 ---
 ## Interview Examples:
 - **Question** "What is a zombie process? How do you find and deal with it?"
+
 Answer:
 ```
 Zombie = dead process not reaped by parent

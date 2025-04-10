@@ -11,6 +11,63 @@ Important Files:
 - Modify user	- `usermod -aG docker john` (add to group)
 - Change password -	`passwd john`
 - Lock/unlock - `passwd -l john` / `passwd -u john`
+- Change default shell of user - `chsh -s /bin/bash username`
+    - before this, ensure the shell is part of `/etc/shells`
+- View username - `id username`
+
+### User Identifiers
+UID and GID
+
+- UID = User ID (stored in /etc/passwd)
+    - UID 0 → root
+    - UID 1-999 → system users
+    - UID 1000+ → regular users
+- GID = Group ID (stored in /etc/group)
+
+### Default User Settings
+Defaults set in:
+- /etc/login.defs
+- /etc/skel/ → copied to new users’ home dirs
+
+### Locking & Disabling Users
+- Lock a User (disable login)
+```
+passwd -l username
+```
+- Unlock a User
+```
+passwd -u username
+```
+- Expire a Password
+```
+chage -E 0 username
+```
+
+
+## Managing Groups
+
+- Primary group: Defined in `/etc/passwd`
+- Supplementary groups: Added with `usermod -aG`
+
+#### Create a Group
+```
+groupadd developers
+```
+#### Add User to Multiple Groups
+```
+usermod -aG dev,qa,infra username
+```
+#### Change Primary Group
+```
+usermod -g groupname username
+```
+#### Key Commands
+```
+groups john
+id john
+groupadd devs
+groupdel devs
+```
 
 ## Permissions
 Permission Model (rwx)
@@ -96,19 +153,6 @@ chown -R user:group /dir
 - Changes ownership of directory and all files/subdirs inside it.
 > [!CAUTION]
 > Interview Tip: Always use -R with caution—especially in /, /home, /var, etc.
-
-## Groups
-- Primary group: Defined in `/etc/passwd`
-- Supplementary groups: Added with `usermod -aG`
-
-Key Commands
-```
-groups john
-id john
-groupadd devs
-groupdel devs
-
-```
 
 #### umask – Default Permission Mask
 What It Is:
