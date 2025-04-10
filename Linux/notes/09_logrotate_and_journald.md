@@ -136,6 +136,25 @@ Enable persistent journaling by creating /var/log/journal/.
 Set up a logrotate config in /etc/logrotate.d/myapp
 
 ---
+- **Question**: Where does logrotate store files?
+
+Based on your logrotate configuration for /var/log/myapp.log, here's where the logs are stored and how logrotate manages them:
+
+- Current Active Log: The currently active logs for your application (myapp) are being written to the file specified at the beginning of the configuration block: /var/log/myapp.log.
+- Rotated Logs: When logrotate runs (typically daily, as specified by daily), it will perform the following actions:
+    - Rename the current log file: /var/log/myapp.log will be renamed to /var/log/myapp.log.1.
+    - Create a new empty log file: A new empty file named /var/log/myapp.log will be created for the application to continue writing new logs to.
+    - Subsequent Rotations: On the next rotation, /var/log/myapp.log.1 will be renamed to /var/log/myapp.log.2, and so on, up to the number specified by the rotate directive.
+    - Deletion of Old Logs: In your case, rotate 7 means that logrotate will keep a maximum of 7 rotated log files. When the 8th rotation occurs, the oldest rotated log file (/var/log/myapp.log.7) will be deleted.
+    - Compressed Logs: Because you have the compress directive, all rotated log files (except the most recent one, /var/log/myapp.log.1) will be compressed using gzip by default. So, you will likely see files like /var/log/myapp.log.2.gz, /var/log/myapp.log.3.gz, and so on.
+
+In summary:
+- Current logs: /var/log/myapp.log
+- Rotated and compressed logs (up to 7): /var/log/myapp.log.1 (uncompressed, from the most recent rotation), /var/log/myapp.log.2.gz, /var/log/myapp.log.3.gz, ..., /var/log/myapp.log.7.gz.
+
+Therefore, the logs are primarily stored within the /var/log/ directory. logrotate manages these files by renaming, creating new ones, compressing older ones, and eventually deleting the oldest ones based on your configuration.
+
+---
 - **Question**: Scenario: You want to run a shell script as a systemd service that logs everything
 
 Script Path: /usr/local/bin/backup.sh
